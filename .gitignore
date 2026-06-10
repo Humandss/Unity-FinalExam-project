@@ -35,6 +35,10 @@ sysinfo.txt
 # Builds
 *.apk
 *.unitypackage
+<<<<<<< Updated upstream
 *.log
 *.log
 /.claude
+=======
+*.pdf
+>>>>>>> Stashed changes
