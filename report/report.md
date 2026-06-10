@@ -49,7 +49,7 @@
 모듈 B는 기능이 풍부한 만큼 다음과 같은 구조적 문제를 안고 있었다.
 
 - **문자열 기반 유한상태기계.** `EnemyFSM`은 적의 상태를 `enum`으로 두고, 상태 전환을 `StartCoroutine(enemyState.ToString())`처럼 **enum 이름 문자열로** 코루틴을 호출하였다. 상태 이름과 코루틴 메서드 이름이 문자열로 묶여 있어, 오타나 이름 변경 시 컴파일 오류 없이 **조용히 동작이 멈춘다.**
-- **다중 인스턴스에 잘못 쓰인 싱글톤.** `EnemyFSM`은 적이 여러 마리임에도 `public static EnemyFSM instance`를 두고 `Awake`에서 자기 자신을 대입한다. 결과적으로 `instance`는 **마지막에 스폰된 적**을 가리키며, 이를 참조하는 점수 계산이 오작동했다(2.3 참조).
+- **다중 인스턴스에 잘못 쓰인 싱글톤.** `EnemyFSM`은 적이 여러 마리임에도 `public static EnemyFSM instance`를 두고 `Awake`에서 null일 때만 자기 자신을 대입한다. 적은 풀링되어 파괴되지 않으므로, 결과적으로 `instance`는 **풀이 처음 생성한 적 하나를 영구히** 가리키게 되고, 이를 참조하는 점수 계산은 실제로 죽은 적과 무관한 값을 읽는다(2.3 참조).
 - **O(n) 선형탐색 오브젝트 풀.** `MemoryPool`은 활성화/비활성화 시 전체 리스트를 매번 순회한다.
 - **타입 분기 피해 처리.** 무기는 레이캐스트로 맞은 대상의 태그를 검사해 `GetComponent<구체타입>().TakeDamage()`를 호출하는 if-else 사슬을 갖는다. 피해를 입는 타입이 늘어날 때마다 모든 무기 코드를 수정해야 한다.
 
@@ -57,7 +57,7 @@
 
 모듈 A는 더 단순하지만 그만큼 더 거친 문제를 갖는다.
 
-- **싱글톤을 통한 피해 전달.** 플레이어 총알 `Bullet`은 적을 맞히면 `Enemy.instance.enemyHealth`를 깎는다. 적이 여러 마리여도 항상 `instance`(마지막 적)의 체력만 깎이는 **명백한 버그**다.
+- **싱글톤을 통한 피해 전달.** 플레이어 총알 `Bullet`은 적을 맞히면 `Enemy.instance.enemyHealth`를 깎는다. 적이 여러 마리여도 항상 `instance`가 가리키는 **특정 한 마리**(그 적이 죽은 뒤라면 이미 파괴된 유령 객체)의 체력만 깎이는 **명백한 버그**다.
 - **직접 호출 결합.** 적 `Enemy`는 죽을 때 `Score_Manager.instance.IncreaseScore()`를 직접 호출하여 점수 UI와 강하게 결합되어 있다.
 - **풀링 부재.** 적 총알을 `Instantiate`로 생성하고 화면을 벗어나면 `Destroy`한다.
 
@@ -67,7 +67,7 @@
 
 | # | 위치 | 증상 | 원인 |
 |---|---|---|---|
-| B1 | `Score_Manager` / `EnemyFSM` | 어떤 적을 죽여도 항상 **마지막 스폰된 적의 점수**가 가산됨 | `EnemyFSM.instance` 싱글톤 오용 |
+| B1 | `Score_Manager` / `EnemyFSM` | 어떤 적을 죽여도 죽은 적이 아닌 **`instance`가 가리키는 고정된 한 적의 점수**가 가산됨. 현재는 모든 적의 점수가 100으로 같아 **우연히 정상처럼 보이는 잠복 버그** | `EnemyFSM.instance` 싱글톤 오용 |
 | B2 | `Bullet` / `Enemy` | 한 적을 맞혀도 **엉뚱한 적**의 체력이 깎임 | `Enemy.instance` 싱글톤 오용 |
 | B3 | `MemoryPool.DeactivateAllPoolItem` | 활성 객체가 앞쪽에 모여있지 않으면 **잘못된 객체를 비활성화** | `for(i<activeCount) list[i]` 인덱싱 오류 |
 | B4 | `EnemyFSM.Idle` | 상태를 떠난 뒤에도 자동 전환 코루틴이 **살아남아** 엉뚱한 시점에 Wander로 전환 | `ChangeState`가 보조 코루틴을 멈추지 않음 |
@@ -297,7 +297,7 @@ casing.Setup(pool, direction);
 // Score_Manager
 public void IncreaseScore()
 {
-    totalScore += EnemyFSM.instance.enemyScore;  // (B1) always the LAST enemy
+    totalScore += EnemyFSM.instance.enemyScore;  // (B1) reads ONE fixed enemy, never the dead one
     UpdateScoreUI();
 }
 
@@ -437,7 +437,7 @@ other.GetComponent<IDamageable>()?.TakeDamage(bullet_Damage);
 
 ## 4.5 싱글톤에 대한 메모
 
-이번 리팩토링에서 가장 큰 교훈은 **싱글톤의 오용**이었다. `EnemyFSM`·`Enemy`처럼 본질적으로 다중 인스턴스인 대상에 싱글톤을 붙이면, 컴파일은 통과하지만 런타임에 "마지막 하나"만 살아남아 조용히 오작동한다(B1·B2). 싱글톤은 "전역 접근"이라는 편의를 주지만, 그 편의가 곧 **숨은 결합과 상태 버그**의 통로가 된다. 본 작업에서는 이런 싱글톤을 제거하고, 통신은 Observer로, 다형성은 Strategy로 대체했다. 죽어 있던 `Player_Controller.instance`도 함께 제거했다.
+이번 리팩토링에서 가장 큰 교훈은 **싱글톤의 오용**이었다. `EnemyFSM`·`Enemy`처럼 본질적으로 다중 인스턴스인 대상에 싱글톤을 붙이면, 컴파일은 통과하지만 런타임에는 여러 인스턴스 중 **`instance`가 가리키는 특정 하나만** 유효하게 취급되어 조용히 오작동한다(B1·B2). 특히 B1은 현재 모든 적의 점수가 동일해 결과가 우연히 맞아 보이는 **잠복 버그**라서, 점수가 다른 적 유형을 추가하는 순간에야 드러났을 것이다. 싱글톤은 "전역 접근"이라는 편의를 주지만, 그 편의가 곧 **숨은 결합과 상태 버그**의 통로가 된다. 본 작업에서는 이런 싱글톤을 제거하고, 통신은 Observer로, 다형성은 Strategy로 대체했다. 죽어 있던 `Player_Controller.instance`도 함께 제거했다.
 
 # 5. 결론
 

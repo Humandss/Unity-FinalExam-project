@@ -5,7 +5,7 @@ using UnityEngine;
 // Refactored to apply the same two patterns used in the FPS module:
 //   * IDamageable  - bullets damage the enemy they actually hit, instead of
 //                    reaching through a bogus Enemy.instance singleton (which
-//                    pointed at whichever enemy ran Awake last).
+//                    pointed at one fixed enemy, not the one that was hit).
 //   * Observer     - on death it raises GameEvents.EnemyKilled(enemyScore)
 //                    instead of calling Score_Manager directly.
 public class Enemy : MonoBehaviour, IDamageable

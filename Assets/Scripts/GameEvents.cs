@@ -4,8 +4,9 @@ using System;
 //
 // Decouples "an enemy died, worth N points" from "the score UI updates".
 // Before, an enemy called Score_Manager.instance.IncreaseScore(), and that
-// method read EnemyFSM.instance.enemyScore - a global that every enemy
-// overwrote in Awake, so the score always used the LAST spawned enemy's value.
+// method read EnemyFSM.instance.enemyScore - a global claimed by the FIRST
+// enemy the pool ever created (null-guarded Awake), so the score was always
+// read from that one fixed enemy, never from the one that actually died.
 // Now the dying enemy publishes its OWN score and any number of listeners
 // (score UI, achievements, sound, ...) can react without the enemy knowing
 // they exist.
