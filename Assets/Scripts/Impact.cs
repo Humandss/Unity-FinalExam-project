@@ -1,26 +1,25 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Impact : MonoBehaviour
 {
     private ParticleSystem particle;
-    private MemoryPool memoryPool;
+    private ObjectPool<Impact> pool;
 
     private void Awake()
     {
         particle = GetComponent<ParticleSystem>();
     }
-    public void Setup(MemoryPool pool)
+
+    public void Setup(ObjectPool<Impact> pool)
     {
-        memoryPool = pool;
+        this.pool = pool;
     }
-    // Update is called once per frame
-    void Update()
+
+    private void Update()
     {
         if (particle.isPlaying == false)
         {
-            memoryPool.DeactivatePoolItem(gameObject);
+            pool.Release(this);
         }
     }
 }

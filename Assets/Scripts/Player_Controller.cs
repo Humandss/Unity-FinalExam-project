@@ -1,26 +1,23 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class Player_Controller : MonoBehaviour
+public class Player_Controller : MonoBehaviour, IDamageable
 {
     [Header("Input KeyCodes")]
     [SerializeField]
-    private KeyCode keyCodeRun = KeyCode.LeftShift; //´Þ¸®±â Å°
+    private KeyCode keyCodeRun = KeyCode.LeftShift; //ï¿½Þ¸ï¿½ï¿½ï¿½ Å°
     [SerializeField]
-    private KeyCode keyCodeJump = KeyCode.Space; // Á¡ÇÁ Å°
+    private KeyCode keyCodeJump = KeyCode.Space; // ï¿½ï¿½ï¿½ï¿½ Å°
     [SerializeField]
-    private KeyCode keyCodeReload = KeyCode.R;//ÀåÀü Å°
+    private KeyCode keyCodeReload = KeyCode.R;//ï¿½ï¿½ï¿½ï¿½ Å°
 
     [Header("Audio Clips")]
     [SerializeField]
     private AudioClip audiloClipWalk;
     [SerializeField]
     private AudioClip audioClipRun;
-
-    public static Player_Controller instance;
 
     public float speed = 25.0f;
     public GameObject Bullets; 
@@ -31,21 +28,16 @@ public class Player_Controller : MonoBehaviour
 
     public GameObject gun;
 
-    private RotateCamera rotateToMouse; // ¸¶¿ì½º ÀÌµ¿À¸·Î Ä«¸Þ¶ó È¸Àü
-    private MovetmentCharacterController movement; // Å°º¸µå ÀÔ·ÂÀ¸·Î ÇÃ·¹ÀÌ¾î ÀÌµ¿, Á¡ÇÁ
+    private RotateCamera rotateToMouse; // ï¿½ï¿½ï¿½ì½º ï¿½Ìµï¿½ï¿½ï¿½ï¿½ï¿½ Ä«ï¿½Þ¶ï¿½ È¸ï¿½ï¿½
+    private MovetmentCharacterController movement; // Å°ï¿½ï¿½ï¿½ï¿½ ï¿½Ô·ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ã·ï¿½ï¿½Ì¾ï¿½ ï¿½Ìµï¿½, ï¿½ï¿½ï¿½ï¿½
     private MovementStatus status;
     private AudioSource audioSource;
     private UI_Manager manager;
-    private WeaponBase weapon; //¹«±â ÄÁÆ®·Ñ·¯
+    private WeaponBase weapon; //ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Æ®ï¿½Ñ·ï¿½
 
     
     private void Awake()
     {
-        if (Player_Controller.instance == null)
-        {
-            Player_Controller.instance = this;
-        }
-        
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Locked;
 
@@ -109,11 +101,11 @@ public class Player_Controller : MonoBehaviour
         float x = Input.GetAxisRaw("Horizontal");
         float z = Input.GetAxisRaw("Vertical");
 
-        if( x!=0 || z !=0 ) // ÀÌµ¿ ÁßÀÏ ¶§
+        if( x!=0 || z !=0 ) // ï¿½Ìµï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
         {
             bool isRun = false;
 
-            //¿·ÀÌ³ª µÚ·Î ÀÌµ¿ÇÒ ¶§´Â ´Þ¸®±â x
+            //ï¿½ï¿½ï¿½Ì³ï¿½ ï¿½Ú·ï¿½ ï¿½Ìµï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Þ¸ï¿½ï¿½ï¿½ x
             if (z > 0) 
             {
                 isRun=Input.GetKey(keyCodeRun);
@@ -129,7 +121,7 @@ public class Player_Controller : MonoBehaviour
                 audioSource.Play();
             }
         }
-        else // Á¦ÀÚ¸®¿¡ ÀÕÀ» ¶§
+        else // ï¿½ï¿½ï¿½Ú¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
         {
             if (audioSource.isPlaying == true)
             {
@@ -155,7 +147,7 @@ public class Player_Controller : MonoBehaviour
 
         if(isDie )
         {
-            print("°ÔÀÓ ¿À¹ö");
+            print("ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½");
             Time.timeScale = 0f;
             manager.PlayerDie();
         }

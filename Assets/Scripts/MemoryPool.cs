@@ -1,33 +1,44 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MemoryPool 
+// Object Pool pattern.
+//
+// Reuses inactive GameObjects instead of Instantiate/Destroy (which churn the
+// GC and cause frame hitches). The public API is unchanged, but the naive
+// implementation had two problems that are fixed here:
+//   * ActivatePoolItem / DeactivatePoolItem were O(n) linear scans of every
+//     pooled item. They are now O(1): a queue hands out free items and a
+//     GameObject -> item dictionary finds the one to release.
+//   * DeactivateAllPoolItem iterated [0, activeCount) over the full list, so
+//     it deactivated the wrong items whenever the active ones were not packed
+//     at the front. It now walks the items that are actually active.
+public class MemoryPool
 {
-    // Start is called before the first frame update
-   private class PoolItem
+    private class PoolItem
     {
-        public bool isActive; //gameObject의 활성화/비활성화 정보
-        public GameObject gameObject; // 화면에 보이는 실제 게임 오브젝트
+        public bool isActive;        // is the object currently in use
+        public GameObject gameObject; // the pooled instance
     }
-    private int increaseCount = 5; //오브젝트가 부족할 때 Instantiate()로 추가 생성되는 오브젝트 개수
-    private int maxCount; // 현재 리스트에 등록되어 있는 오브젝트 캐수
-    private int activeCount; // 현재 게임에 사용되고 있는 활성화 오브젝트 개수
 
-    private GameObject poolObject; //오브젝트 풀링에서 관리하는 게임 오브젝트 프리팹
-    private List<PoolItem> poolItemList; // 관리되는 모든 오브젝트를 저장하는 리스트
+    private readonly int increaseCount = 5; // how many to add when the pool runs dry
+    private int maxCount;                    // total instances owned by the pool
+    private int activeCount;                 // instances currently in use
 
-    public int MaxCount => maxCount; // 외부에서 현재 리스트에 등록되어 있는 오브젝트 개수 확인을 위한 프로퍼티
-    public int ActiveCount => activeCount; //외부에서 현재 활성화 되어 있는 오브젝트 개수 확인을 위한 프로퍼티
+    private readonly GameObject poolObject;
+    private readonly List<PoolItem> poolItemList = new List<PoolItem>();
+    private readonly Queue<PoolItem> inactiveItems = new Queue<PoolItem>();              // free list -> O(1) activate
+    private readonly Dictionary<GameObject, PoolItem> lookup = new Dictionary<GameObject, PoolItem>(); // O(1) release
 
-    private Vector3 tempPosition = new Vector3(48, 1, 48);
+    public int MaxCount => maxCount;
+    public int ActiveCount => activeCount;
+
+    private readonly Vector3 tempPosition = new Vector3(48, 1, 48); // parking spot for inactive items
+
     public MemoryPool(GameObject poolObject)
     {
         maxCount = 0;
         activeCount = 0;
         this.poolObject = poolObject;
-
-        poolItemList = new List<PoolItem>();
 
         InstantiateObjects();
     }
@@ -38,92 +49,77 @@ public class MemoryPool
 
         for (int i = 0; i < increaseCount; i++)
         {
-            PoolItem poolItem = new PoolItem();
-
-            poolItem.isActive = false;
-            poolItem.gameObject = GameObject.Instantiate(poolObject);
+            PoolItem poolItem = new PoolItem
+            {
+                isActive = false,
+                gameObject = GameObject.Instantiate(poolObject)
+            };
             poolItem.gameObject.transform.position = tempPosition;
             poolItem.gameObject.SetActive(false);
 
-            poolItemList.Add(poolItem); 
+            poolItemList.Add(poolItem);
+            inactiveItems.Enqueue(poolItem);
+            lookup.Add(poolItem.gameObject, poolItem);
         }
     }
-    public void DestroyObjects() 
-    {
-        if (poolItemList == null) return;
 
-        int count = poolItemList.Count;
-        for(int i=0; i<count; ++i)
+    public void DestroyObjects()
+    {
+        if (poolItemList.Count == 0) return;
+
+        foreach (PoolItem poolItem in poolItemList)
         {
-            GameObject.Destroy(poolItemList[i].gameObject);
+            GameObject.Destroy(poolItem.gameObject);
         }
+
         poolItemList.Clear();
-    
+        inactiveItems.Clear();
+        lookup.Clear();
+        maxCount = 0;
+        activeCount = 0;
     }
+
     public GameObject ActivatePoolItem()
     {
-        if(poolItemList == null) return null;
-
-        if (maxCount == activeCount)
+        if (inactiveItems.Count == 0)
         {
-            InstantiateObjects();
+            InstantiateObjects(); // grow the pool; new items are enqueued as free
         }
-        int count = poolItemList.Count;
-        for (int i = 0; i < count; ++i)
-        {
-            PoolItem poolItem = poolItemList[i];
 
-            if (poolItem.isActive == false)
-            {
-                activeCount++;
+        PoolItem poolItem = inactiveItems.Dequeue();
+        activeCount++;
 
-                poolItem.isActive = true;
-                poolItem.gameObject.SetActive(true);
+        poolItem.isActive = true;
+        poolItem.gameObject.SetActive(true);
 
-                return poolItem.gameObject;
-            }
-        }
-        return null;
+        return poolItem.gameObject;
     }
+
     public void DeactivatePoolItem(GameObject removeObject)
     {
-        if (poolItemList == null || removeObject == null) return;
-        
-        int count = poolItemList.Count;
-        for(int i=0; i<count; ++i)
-        {
-            PoolItem poolItem = poolItemList[i];
+        if (removeObject == null) return;
+        if (!lookup.TryGetValue(removeObject, out PoolItem poolItem)) return;
+        if (!poolItem.isActive) return; // already released; avoid double counting
 
-            if ((poolItem.gameObject == removeObject))
-            {
-                activeCount--;
-                poolItem.gameObject.transform.position = tempPosition;
-                poolItem.isActive=false;
-                poolItem.gameObject.SetActive(false);
+        activeCount--;
+        poolItem.isActive = false;
+        poolItem.gameObject.transform.position = tempPosition;
+        poolItem.gameObject.SetActive(false);
 
-                return;
-            }
-            
-                
-            
-        }
-            
-        
+        inactiveItems.Enqueue(poolItem);
     }
+
     public void DeactivateAllPoolItem()
     {
-        if (poolItemList == null) return;
-
-        int coint = poolItemList.Count;
-        for(int i=0; i<activeCount; ++i)
+        foreach (PoolItem poolItem in poolItemList)
         {
-            PoolItem poolItem = poolItemList[i];
-
-            if (poolItem.gameObject != null && poolItem.isActive == true)
+            if (poolItem.gameObject != null && poolItem.isActive)
             {
-                poolItem.gameObject.transform.position = tempPosition;
                 poolItem.isActive = false;
+                poolItem.gameObject.transform.position = tempPosition;
                 poolItem.gameObject.SetActive(false);
+
+                inactiveItems.Enqueue(poolItem);
             }
         }
         activeCount = 0;

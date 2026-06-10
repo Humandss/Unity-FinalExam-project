@@ -1,59 +1,49 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class Enemy : MonoBehaviour
+// Legacy top-down shooter enemy (Module A).
+//
+// Refactored to apply the same two patterns used in the FPS module:
+//   * IDamageable  - bullets damage the enemy they actually hit, instead of
+//                    reaching through a bogus Enemy.instance singleton (which
+//                    pointed at whichever enemy ran Awake last).
+//   * Observer     - on death it raises GameEvents.EnemyKilled(enemyScore)
+//                    instead of calling Score_Manager directly.
+public class Enemy : MonoBehaviour, IDamageable
 {
-    public static Enemy instance;
     public int enemyHealth = 100;
     public int enemyScore = 100;
     public GameObject enemyBullet;
     public Transform enemyFirePos;
-    GameObject enemyInstance;
 
     private float enemyFireRate = 0.4f;
     private float enemyNextFireTime = 0f;
 
-    // Start is called before the first frame update
-    private void Awake()
+    private void Update()
     {
-        if (Enemy.instance == null)
-        {
-            Enemy.instance = this;
-        }
-    }
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
         EnemyShooting();
-        EnemyDie();
     }
-    void EnemyDie() // Àû »ç¸Á½Ã È£ÃâµÇ´Â ÇÔ¼ö
+
+    public void TakeDamage(int damage)
     {
-        if(enemyHealth <= 0)
+        if (enemyHealth <= 0) return;
+
+        enemyHealth -= damage;
+
+        if (enemyHealth <= 0)
         {
-            print("Àû »ç¸Á!");
-            Destroy(this.gameObject);
-            Score_Manager.instance.IncreaseScore();
+            GameEvents.RaiseEnemyKilled(enemyScore);
+            Destroy(gameObject);
         }
     }
-    void EnemyShooting() //ÀûÀÌ ÃÑÀ» ½î´Â ÇÔ¼ö
-    {
-        if (enemyHealth > 0 && Time.time > enemyNextFireTime) 
-        {
-            Vector3 pos = this.gameObject.transform.position;
 
-            enemyInstance = Instantiate(enemyBullet, new Vector3(pos.x, pos.y, (pos.z - 1.0f)), Quaternion.identity);
+    private void EnemyShooting()
+    {
+        if (enemyHealth > 0 && Time.time > enemyNextFireTime)
+        {
+            Vector3 pos = transform.position;
+            Instantiate(enemyBullet, new Vector3(pos.x, pos.y, pos.z - 1.0f), Quaternion.identity);
 
             enemyNextFireTime = Time.time + enemyFireRate;
         }
     }
-    
-
 }

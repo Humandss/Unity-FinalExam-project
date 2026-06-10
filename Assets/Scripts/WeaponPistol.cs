@@ -65,7 +65,7 @@ public class WeaponPistol : WeaponBase
     {
         if(Time.time - lastAttackTime > weaponSetting.fireRate)
         {
-            //¶Ù°í ÀÖÀ» ¶§ °ø°Ý ºÒ°¡
+            //ï¿½Ù°ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ò°ï¿½
             if (animator.MoveSpeed > 0.5f)
             {
                 return;
@@ -130,33 +130,31 @@ public class WeaponPistol : WeaponBase
         RaycastHit hit;
         Vector3 targetPoint = Vector3.zero;
 
-        //È­¸éÀÇ Áß¾Ó ÁÂÇ¥(aim ±âÁØÀ¸·Î À§Ä¡ °è»ê)
+        //È­ï¿½ï¿½ï¿½ï¿½ ï¿½ß¾ï¿½ ï¿½ï¿½Ç¥(aim ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ ï¿½ï¿½ï¿½)
         ray = mainCamera.ViewportPointToRay(Vector2.one * 0.5f);
-        //»ç°Å¸®¾È¿¡ ºÎµúÈ÷´Â ¿ÀºêÁ§Æ® ¡B °è½Ñ
+        //ï¿½ï¿½Å¸ï¿½ï¿½È¿ï¿½ ï¿½Îµï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® ï¿½B ï¿½ï¿½ï¿½
         if (Physics.Raycast(ray, out hit, weaponSetting.fireDistance))
         {
             targetPoint = hit.point;
         }
-        // ÃÖ´ë »ç°Å¸®¿¡ ¿ÀºêÁ§Æ® ¾øÀ¸¸é targetpoint¸¦ ÃÖ´ë »ç°Å¸®¿¡ À§Ä¡
+        // ï¿½Ö´ï¿½ ï¿½ï¿½Å¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ targetpointï¿½ï¿½ ï¿½Ö´ï¿½ ï¿½ï¿½Å¸ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡
         else
         {
             targetPoint = ray.origin + ray.direction * weaponSetting.fireDistance;
         }
         Debug.DrawRay(ray.origin, ray.direction * weaponSetting.fireDistance, Color.black);
 
-        //Ã¹¹øÂ° ·¹ÀÌÄÉ½ºÆ® ¿©»êÀ¸·Î ÀÔ·ÂµÈ targetpoint¸¦ ¸ñÇ¥ÁöÁ¤À¸·Î ¼³Á¤ÇÏ°í,
-        // ÃÑ±¸¸¦ ½ÃÀÛÁöÁ¡À¸·Î ÇÏ¿© raycast ¿¬»ê
+        //Ã¹ï¿½ï¿½Â° ï¿½ï¿½ï¿½ï¿½ï¿½É½ï¿½Æ® ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ô·Âµï¿½ targetpointï¿½ï¿½ ï¿½ï¿½Ç¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï°ï¿½,
+        // ï¿½Ñ±ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ï¿ï¿½ raycast ï¿½ï¿½ï¿½ï¿½
         Vector3 fireDirection = (targetPoint - bulletSpawnPoint.position).normalized;
         if (Physics.Raycast(bulletSpawnPoint.position, fireDirection, out hit, weaponSetting.fireDistance))
         {
             impactMemoryPool.SpawnImpact(hit);
-            if (hit.transform.CompareTag("Enemy"))
+
+            IDamageable damageable = hit.transform.GetComponent<IDamageable>();
+            if (damageable != null)
             {
-                hit.transform.GetComponent<EnemyFSM>().TakeDamage(weaponSetting.damage);
-            }
-            else if (hit.transform.CompareTag("InteractionObject"))
-            {
-                hit.transform.GetComponent<InteractionObject>().TakeDamage(weaponSetting.damage);
+                damageable.TakeDamage(weaponSetting.damage);
             }
         }
         Debug.DrawRay(bulletSpawnPoint.position, fireDirection * weaponSetting.fireDistance, Color.blue);

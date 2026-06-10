@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public abstract class InteractionObject : MonoBehaviour
+public abstract class InteractionObject : MonoBehaviour, IDamageable
 {
     [Header("Interaction Object")]
     [SerializeField]

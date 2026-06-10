@@ -1,4 +1,4 @@
-using System.Collections;
+ï»¿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -10,6 +10,8 @@ public class PlayerHUD : MonoBehaviour
    
     
     private WeaponBase weapon;
+    private Vector2 defaultWeaponIconSize;
+    private Dictionary<Sprite, Sprite> croppedWeaponIconCache = new Dictionary<Sprite, Sprite>();
 
     [SerializeField]
     private MovementStatus status;
@@ -22,7 +24,9 @@ public class PlayerHUD : MonoBehaviour
     [SerializeField]
     private Sprite[] spriteWeaponIcons;
     [SerializeField]
-    private Vector2[] sizeWeaponIcons; //¹«±â¸¶´Ù ´Ù¸¥ ¾ÆÀÌÄÜÀÇ Àû¿ë
+    private Vector2[] sizeWeaponIcons; //ë¬´ê¸°ë§ˆë‹¤ ë‹¤ë¥¸ ì•„ì´ì½˜ì˜ ì ìš©
+    [SerializeField]
+    private float weaponIconScaleMultiplier = 1.6f;
 
     public GameObject reloading_panel;
 
@@ -36,13 +40,13 @@ public class PlayerHUD : MonoBehaviour
     [SerializeField]
     private Transform magazieParent;
     [SerializeField]
-    private int maxMagazineCount; //Ã³À½ »ı¼ºÇÏ´Â ÅºÃ¢ÀÇ ÃÖ´ë °¹¼ö
+    private int maxMagazineCount; //ì²˜ìŒ ìƒì„±í•˜ëŠ” íƒ„ì°½ì˜ ìµœëŒ€ ê°¯ìˆ˜
 
     [Header("HP & BloodScreen UI")]
     [SerializeField]
-    private TextMeshProUGUI textHP; // ÇÃ·¹ÀÌ¾î Ã¼·ÂÀ» ³ªÅ¸³¿
+    private TextMeshProUGUI textHP; // í”Œë ˆì´ì–´ ì²´ë ¥ì„ ë‚˜íƒ€ëƒ„
     [SerializeField]
-    private Image imageBloodScreen; // ÇÃ·¹ÀÌ¾î°¡ °ø°İ¹Ş¾ÒÀ» ¶§ »ı±â´Â ½ºÅ©¸°
+    private Image imageBloodScreen; // í”Œë ˆì´ì–´ê°€ ê³µê²©ë°›ì•˜ì„ ë•Œ ìƒê¸°ëŠ” ìŠ¤í¬ë¦°
     [SerializeField]
     private AnimationCurve curveBloodScreen;
     [SerializeField]
@@ -52,7 +56,9 @@ public class PlayerHUD : MonoBehaviour
 
     private void Awake()
     {
-      
+        defaultWeaponIconSize = imageWeapon.rectTransform.sizeDelta;
+        imageWeapon.preserveAspect = true;
+        imageWeapon.rectTransform.localScale = Vector3.one;
         status.onHPEvent.AddListener(UpdatePHUD);
         
     }
@@ -76,8 +82,80 @@ public class PlayerHUD : MonoBehaviour
     private void SetupWeapon()
     {
         textWeaponName.text = weapon.WeaponName.ToString();
-        imageWeapon.sprite = spriteWeaponIcons[(int)weapon.WeaponName];
-        imageWeapon.rectTransform.sizeDelta = sizeWeaponIcons[(int)weapon.WeaponName]; 
+        imageWeapon.sprite = GetDisplaySprite(spriteWeaponIcons[(int)weapon.WeaponName]);
+        imageWeapon.preserveAspect = true;
+        imageWeapon.rectTransform.localScale = Vector3.one;
+
+        if (sizeWeaponIcons != null &&
+            (int)weapon.WeaponName < sizeWeaponIcons.Length &&
+            sizeWeaponIcons[(int)weapon.WeaponName] != Vector2.zero)
+        {
+            imageWeapon.rectTransform.sizeDelta = sizeWeaponIcons[(int)weapon.WeaponName] * weaponIconScaleMultiplier;
+        }
+        else
+        {
+            imageWeapon.rectTransform.sizeDelta = defaultWeaponIconSize * weaponIconScaleMultiplier;
+        }
+    }
+    private Sprite GetDisplaySprite(Sprite source)
+    {
+        if (source == null)
+        {
+            return null;
+        }
+
+        if (croppedWeaponIconCache.TryGetValue(source, out Sprite cachedSprite))
+        {
+            return cachedSprite;
+        }
+
+        try
+        {
+            Rect rect = source.rect;
+            Texture2D texture = source.texture;
+            Color[] pixels = texture.GetPixels((int)rect.x, (int)rect.y, (int)rect.width, (int)rect.height);
+
+            int width = (int)rect.width;
+            int height = (int)rect.height;
+            int minX = width;
+            int minY = height;
+            int maxX = -1;
+            int maxY = -1;
+
+            for (int y = 0; y < height; ++y)
+            {
+                for (int x = 0; x < width; ++x)
+                {
+                    if (pixels[y * width + x].a <= 0.05f)
+                    {
+                        continue;
+                    }
+
+                    if (x < minX) minX = x;
+                    if (y < minY) minY = y;
+                    if (x > maxX) maxX = x;
+                    if (y > maxY) maxY = y;
+                }
+            }
+
+            if (maxX < minX || maxY < minY)
+            {
+                croppedWeaponIconCache[source] = source;
+                return source;
+            }
+
+            Rect croppedRect = new Rect(rect.x + minX, rect.y + minY, maxX - minX + 1, maxY - minY + 1);
+            Sprite croppedSprite = Sprite.Create(texture, croppedRect, new Vector2(0.5f, 0.5f), source.pixelsPerUnit);
+            croppedSprite.name = source.name + "_Cropped";
+
+            croppedWeaponIconCache[source] = croppedSprite;
+            return croppedSprite;
+        }
+        catch
+        {
+            croppedWeaponIconCache[source] = source;
+            return source;
+        }
     }
     private void UpdateAmmo(int currentAmmo, int maxAmmo) { 
     
@@ -155,3 +233,4 @@ public class PlayerHUD : MonoBehaviour
     }
   
 }
+

@@ -1,23 +1,22 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public enum ImpactType { Normal=0, Obstacle, Enemy, InteractionObject, }
+public enum ImpactType { Normal = 0, Obstacle, Enemy, InteractionObject, }
 
 public class ImpactMemoryPool : MonoBehaviour
 {
     [SerializeField]
     private GameObject[] impactPrefab;
-    private MemoryPool[] memoryPool;
+    private ObjectPool<Impact>[] pools;
 
     private void Awake()
     {
-        memoryPool = new MemoryPool[impactPrefab.Length];
-        for (int i=0; i < impactPrefab.Length; ++i)
+        pools = new ObjectPool<Impact>[impactPrefab.Length];
+        for (int i = 0; i < impactPrefab.Length; ++i)
         {
-            memoryPool[i] = new MemoryPool(impactPrefab[i]);
+            pools[i] = new ObjectPool<Impact>(impactPrefab[i]);
         }
     }
+
     public void SpawnImpact(RaycastHit hit)
     {
         if (hit.transform.CompareTag("ImpactNormal"))
@@ -39,22 +38,17 @@ public class ImpactMemoryPool : MonoBehaviour
         }
     }
 
-    public void OnSpawnImpact(ImpactType type, Vector3 position, Quaternion rotatation, Color color = new Color())
+    public void OnSpawnImpact(ImpactType type, Vector3 position, Quaternion rotation, Color color = new Color())
     {
-        GameObject item = memoryPool[(int)type].ActivatePoolItem();
-        item.transform.position = position;
-        item.transform.rotation = rotatation;
-        item.GetComponent<Impact>().Setup(memoryPool[(int)type]);
+        Impact impact = pools[(int)type].Get();
+        impact.transform.position = position;
+        impact.transform.rotation = rotation;
+        impact.Setup(pools[(int)type]);
 
-        if(type==ImpactType.InteractionObject)
+        if (type == ImpactType.InteractionObject)
         {
-            ParticleSystem.MainModule main = item.GetComponent<ParticleSystem>().main;
+            ParticleSystem.MainModule main = impact.GetComponent<ParticleSystem>().main;
             main.startColor = color;
         }
-    }
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 }

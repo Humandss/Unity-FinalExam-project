@@ -13,30 +13,30 @@ public class WeaponAssualt : WeaponBase
 
     [Header("Audio Clips")]
     [SerializeField]
-    private AudioClip audioClipTakeOutWeapon; //¹«±â ÀåÂø »ç¿îµå
+    private AudioClip audioClipTakeOutWeapon; //ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     [SerializeField] 
-    private AudioClip audioClipFire; //¹ß»ç »ç¿îµå
+    private AudioClip audioClipFire; //ï¿½ß»ï¿½ ï¿½ï¿½ï¿½ï¿½
     [SerializeField]
     private AudioClip audioClipReload;
 
     [Header("Fire Effects")]
     [SerializeField]
-    private GameObject muzzleFlashEffect; // ÃÑ±¸ ÀÌÆåÆ®
+    private GameObject muzzleFlashEffect; // ï¿½Ñ±ï¿½ ï¿½ï¿½ï¿½ï¿½Æ®
 
     [Header("Spawn Points")]
     [SerializeField]
-    private Transform casingSpawnPoints; //ÅºÇÇ ÀÌÆåÆ®
+    private Transform casingSpawnPoints; //Åºï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Æ®
 
     [SerializeField]
-    private Transform bulletSpawnPoint; //ÃÑ¾Ë ÀÌÆåÆ®
+    private Transform bulletSpawnPoint; //ï¿½Ñ¾ï¿½ ï¿½ï¿½ï¿½ï¿½Æ®
 
     private CasingMemoryPool casingMemoryPool;
     private ImpactMemoryPool impactMemoryPool;
     private Camera mainCamera;
 
-    private bool isModeChange = false; // ¸ðµç ÀüÈ¯ ¿©ºÎ
-    private float defaultModeFOV = 60; //±âº» fov°ª
-    private float aimModeFOV = 30; // aim¸ðµå½Ã fov°ª
+    private bool isModeChange = false; // ï¿½ï¿½ï¿½ ï¿½ï¿½È¯ ï¿½ï¿½ï¿½ï¿½
+    private float defaultModeFOV = 60; //ï¿½âº» fovï¿½ï¿½
+    private float aimModeFOV = 30; // aimï¿½ï¿½ï¿½ï¿½ fovï¿½ï¿½
    
 
     private void Awake()
@@ -46,13 +46,13 @@ public class WeaponAssualt : WeaponBase
         impactMemoryPool = GetComponent<ImpactMemoryPool>();
         mainCamera=Camera.main;
 
-        weaponSetting.currentAmmo = weaponSetting.maxAmmo; //ÇöÀç Åº¼ö¸¦ ÃÖ´ë·Î ÁöÁ¤
-        weaponSetting.CurrentMagazine = weaponSetting.maxMagazine; //Ã³À½ ÅºÃ¢ ¼ö ÃÖ´ë·Î ÁöÁ¤
+        weaponSetting.currentAmmo = weaponSetting.maxAmmo; //ï¿½ï¿½ï¿½ï¿½ Åºï¿½ï¿½ï¿½ï¿½ ï¿½Ö´ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+        weaponSetting.CurrentMagazine = weaponSetting.maxMagazine; //Ã³ï¿½ï¿½ ÅºÃ¢ ï¿½ï¿½ ï¿½Ö´ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 
     }
     private void OnEnable()
     {
-        muzzleFlashEffect.SetActive(false); // ÃÑ±¸ ÀÌÆåÆ® ºñÈ°¼ºÈ­
+        muzzleFlashEffect.SetActive(false); // ï¿½Ñ±ï¿½ ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ï¿½È°ï¿½ï¿½È­
         PlaySound(audioClipTakeOutWeapon);
 
         onAmmoEvent.Invoke(weaponSetting.currentAmmo, weaponSetting.maxAmmo);
@@ -62,9 +62,9 @@ public class WeaponAssualt : WeaponBase
     }
     public override void StartWeaponAction(int type = 0)
     {
-        if (isReload == true) return; //ÀçÀåÀüÁßÀÏ ¶§ °ø°Ýx
+        if (isReload == true) return; //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½x
 
-        if (isModeChange == true) return; // ¸ðµå ÀüÈ¯ÀÏ ¶§ °ø°Ýx
+        if (isModeChange == true) return; // ï¿½ï¿½ï¿½ ï¿½ï¿½È¯ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½x
 
         if (type == 0)
         {
@@ -116,12 +116,12 @@ public class WeaponAssualt : WeaponBase
         if(Time.time - lastAttackTime > weaponSetting.fireRate) 
         { 
           lastAttackTime = Time.time;
-            //Åº¼ö°¡ ¾øÀ¸¸é °ø°Ý ºÒ°¡
+            //Åºï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ò°ï¿½
             if (weaponSetting.currentAmmo <= 0)
             {
                 return;
             }
-            //°ø°Ý½Ã Åº °¨¼Ò
+            //ï¿½ï¿½ï¿½Ý½ï¿½ Åº ï¿½ï¿½ï¿½ï¿½
             weaponSetting.currentAmmo--;
             onAmmoEvent.Invoke(weaponSetting.currentAmmo, weaponSetting.maxAmmo);
 
@@ -134,9 +134,9 @@ public class WeaponAssualt : WeaponBase
             animator.Play("Fire", -1, 0);
            
             
-            casingMemoryPool.SpawnCasing(casingSpawnPoints.position, transform.right); //ÅºÇÇ »ý¼º
+            casingMemoryPool.SpawnCasing(casingSpawnPoints.position, transform.right); //Åºï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 
-            TwoStepRaycast(); // ÃÑ¾Ë(±¤¼±) ¹ß»ç
+            TwoStepRaycast(); // ï¿½Ñ¾ï¿½(ï¿½ï¿½ï¿½ï¿½) ï¿½ß»ï¿½
         }
     }
     private IEnumerator OnMuzzleFlashEffect()
@@ -178,33 +178,31 @@ public class WeaponAssualt : WeaponBase
         RaycastHit hit;
         Vector3 targetPoint = Vector3.zero;
 
-        //È­¸éÀÇ Áß¾Ó ÁÂÇ¥(aim ±âÁØÀ¸·Î À§Ä¡ °è»ê)
+        //È­ï¿½ï¿½ï¿½ï¿½ ï¿½ß¾ï¿½ ï¿½ï¿½Ç¥(aim ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ ï¿½ï¿½ï¿½)
         ray = mainCamera.ViewportPointToRay(Vector2.one * 0.5f);
-        //»ç°Å¸®¾È¿¡ ºÎµúÈ÷´Â ¿ÀºêÁ§Æ® ¡B °è½Ñ
+        //ï¿½ï¿½Å¸ï¿½ï¿½È¿ï¿½ ï¿½Îµï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® ï¿½B ï¿½ï¿½ï¿½
         if (Physics.Raycast(ray, out hit, weaponSetting.fireDistance))
         {
             targetPoint=hit.point;
         }
-        // ÃÖ´ë »ç°Å¸®¿¡ ¿ÀºêÁ§Æ® ¾øÀ¸¸é targetpoint¸¦ ÃÖ´ë »ç°Å¸®¿¡ À§Ä¡
+        // ï¿½Ö´ï¿½ ï¿½ï¿½Å¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ targetpointï¿½ï¿½ ï¿½Ö´ï¿½ ï¿½ï¿½Å¸ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡
         else
         {
             targetPoint = ray.origin + ray.direction * weaponSetting.fireDistance;
         }
         Debug.DrawRay(ray.origin, ray.direction*weaponSetting.fireDistance, Color.black);
 
-        //Ã¹¹øÂ° ·¹ÀÌÄÉ½ºÆ® ¿©»êÀ¸·Î ÀÔ·ÂµÈ targetpoint¸¦ ¸ñÇ¥ÁöÁ¤À¸·Î ¼³Á¤ÇÏ°í,
-        // ÃÑ±¸¸¦ ½ÃÀÛÁöÁ¡À¸·Î ÇÏ¿© raycast ¿¬»ê
+        //Ã¹ï¿½ï¿½Â° ï¿½ï¿½ï¿½ï¿½ï¿½É½ï¿½Æ® ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ô·Âµï¿½ targetpointï¿½ï¿½ ï¿½ï¿½Ç¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï°ï¿½,
+        // ï¿½Ñ±ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ï¿ï¿½ raycast ï¿½ï¿½ï¿½ï¿½
         Vector3 fireDirection = (targetPoint - bulletSpawnPoint.position).normalized;
         if (Physics.Raycast(bulletSpawnPoint.position, fireDirection, out hit, weaponSetting.fireDistance))
         {
             impactMemoryPool.SpawnImpact(hit);
-            if(hit.transform.CompareTag("Enemy"))
+
+            IDamageable damageable = hit.transform.GetComponent<IDamageable>();
+            if (damageable != null)
             {
-                hit.transform.GetComponent<EnemyFSM>().TakeDamage(weaponSetting.damage);
-            }
-            else if(hit.transform.CompareTag("InteractionObject"))
-            {
-                hit.transform.GetComponent<InteractionObject>().TakeDamage(weaponSetting.damage);
+                damageable.TakeDamage(weaponSetting.damage);
             }
         }
         Debug.DrawRay(bulletSpawnPoint.position, fireDirection*weaponSetting.fireDistance, Color.blue);

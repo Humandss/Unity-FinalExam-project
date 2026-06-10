@@ -5,7 +5,7 @@ using UnityEngine;
 public class Enemy_Bullet : MonoBehaviour
 {
     private MovementsTransform movement;
-    private float projectileDistance = 40; // ÀûÀÌ ¹ß»çÇÏ´Â ÃÑ¾ËÀÇ ÃÖ´ë ¹ß»ç°Å¸®
+    private float projectileDistance = 40; // ï¿½ï¿½ï¿½ï¿½ ï¿½ß»ï¿½ï¿½Ï´ï¿½ ï¿½Ñ¾ï¿½ï¿½ï¿½ ï¿½Ö´ï¿½ ï¿½ß»ï¿½Å¸ï¿½
     private int damage = 5;
 
    
@@ -36,7 +36,7 @@ public class Enemy_Bullet : MonoBehaviour
     {
         if(other.CompareTag("Player"))
         {
-            other.GetComponent<Player_Controller>().TakeDamage(damage);
+            other.GetComponent<IDamageable>()?.TakeDamage(damage);
             Destroy(gameObject);
         }
     }
